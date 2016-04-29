@@ -36,12 +36,14 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -146,6 +148,9 @@ public class MainActivity extends AppCompatActivity implements
      */
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+
+    public static final String EXTRA_LATITUDE = "beatery:latitude";
+    public static final String EXTRA_LONGITUDE = "beatery:longitude";
 
     /**
      * Provides the entry point to Google Play services.
@@ -323,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements
      * settings dialog to the user.
      */
     @Override
-    public void onResult(LocationSettingsResult locationSettingsResult) {
+    public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
         final Status status = locationSettingsResult.getStatus();
 
         switch (status.getStatusCode()) {
@@ -442,35 +447,42 @@ public class MainActivity extends AppCompatActivity implements
             setGPSCoordinate();
         }
 
-        new AsyncTask<Void, Void, List<Address>>() {
-            @Override
-            protected List<Address> doInBackground(Void... params) {
-                Geocoder gcd = new Geocoder(getBaseContext(), Locale.getDefault());
-                List<Address> addresses = null;
-                try {
-                    addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
-                    while (addresses.size() == 0) {
+        if (isNetworkAvailable(this)) {
+            new AsyncTask<Void, Void, List<Address>>() {
+                @Override
+                protected List<Address> doInBackground(Void... params) {
+                    Geocoder gcd = new Geocoder(getBaseContext(), Locale.getDefault());
+                    List<Address> addresses = null;
+                    try {
                         addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
+                        while (addresses.size() == 0) {
+                            addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
+                        }
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
 
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    return addresses;
                 }
 
-                return addresses;
-            }
-
-            @Override
-            protected void onPostExecute(List<Address> addresses) {
-                if (addresses.size() > 0) {
-                    setAddress(addresses);
+                @Override
+                protected void onPostExecute(List<Address> addresses) {
+                    if (addresses.size() > 0) {
+                        setAddress(addresses);
+                    }
                 }
-            }
-        }.execute();
+            }.execute();
+        }
 
         if (mDialog != null) {
             mDialog.dismiss();
         }
+    }
+
+    public boolean isNetworkAvailable(final Context context) {
+        final ConnectivityManager connectivityManager = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
+        return connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected();
     }
 
     /**
@@ -485,7 +497,7 @@ public class MainActivity extends AppCompatActivity implements
                 this
         ).setResultCallback(new ResultCallback<Status>() {
             @Override
-            public void onResult(Status status) {
+            public void onResult(@NonNull Status status) {
                 mRequestingLocationUpdates = false;
                 setButtonsEnabledState();
             }
@@ -595,7 +607,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult result) {
+    public void onConnectionFailed(@NonNull ConnectionResult result) {
         // Refer to the javadoc for ConnectionResult to see what error codes might be returned in
         // onConnectionFailed.
         Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
@@ -671,6 +683,14 @@ public class MainActivity extends AppCompatActivity implements
         // stopped state. Doing so helps battery performance and is especially
         // recommended in applications that request frequent location updates.
         stopLocationUpdates();
+    }
+
+    @OnClick(R.id.address_text)
+    public void onShowMap() {
+        Intent intent = new Intent(this, MapsActivity.class);
+        intent.putExtra(EXTRA_LATITUDE, mLatitude);
+        intent.putExtra(EXTRA_LONGITUDE, mLongitude);
+        startActivity(intent);
     }
 
     @OnClick(R.id.bring_address_button)
