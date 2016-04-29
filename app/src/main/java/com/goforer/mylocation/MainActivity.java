@@ -42,6 +42,7 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -65,6 +66,9 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.maps.model.LatLng;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -111,6 +115,10 @@ public class MainActivity extends AppCompatActivity implements
     TextView mLastUpdateTimeText;
     @BindView(R.id.address_text)
     TextView mAddressText;
+    @BindView(R.id.bring_address_button)
+    Button mBringAddressButton;
+    @BindView(R.id.bring_address_text)
+    TextView mBringAddress;
 
     protected static final String TAG = "MainActivity";
 
@@ -430,20 +438,35 @@ public class MainActivity extends AppCompatActivity implements
             mLongitudeText.setText(String.format("%s: %f", mLongitudeLabel, mLongitude));
             mLastUpdateTimeText.setText(String.format("%s: %s", mLastUpdateTimeLabel,
                     mLastUpdateTime));
+
+            setGPSCoordinate();
         }
 
-        Geocoder gcd = new Geocoder(getBaseContext(),
-                Locale.getDefault());
-        List<Address> addresses;
-        try {
-            addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
-            if (addresses.size() > 0) {
-                setGPSInfo(addresses);
+        new AsyncTask<Void, Void, List<Address>>() {
+            @Override
+            protected List<Address> doInBackground(Void... params) {
+                Geocoder gcd = new Geocoder(getBaseContext(), Locale.getDefault());
+                List<Address> addresses = null;
+                try {
+                    addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
+                    while (addresses.size() == 0) {
+                        addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                return addresses;
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            @Override
+            protected void onPostExecute(List<Address> addresses) {
+                if (addresses.size() > 0) {
+                    setAddress(addresses);
+                }
+            }
+        }.execute();
 
         if (mDialog != null) {
             mDialog.dismiss();
@@ -635,7 +658,7 @@ public class MainActivity extends AppCompatActivity implements
      * updates have already been requested.
      */
     @OnClick(R.id.start_updates_button)
-    public void startUpdates() {
+    public void onStartUpdates() {
         checkLocationSettings();
     }
 
@@ -643,15 +666,25 @@ public class MainActivity extends AppCompatActivity implements
      * Handles the Stop Updates button, and requests removal of location updates.
      */
     @OnClick(R.id.stop_updates_button)
-    public void stopUpdates() {
+    public void onStopUpdates() {
         // It is a good practice to remove location requests when the activity is in a paused or
         // stopped state. Doing so helps battery performance and is especially
         // recommended in applications that request frequent location updates.
         stopLocationUpdates();
     }
 
+    @OnClick(R.id.bring_address_button)
+    public void onBringAddress() {
+        getGPSInfo();
+    }
+
+    private void setGPSCoordinate() {
+        GPSData.INSTANCE.setLatitude(mLatitude);
+        GPSData.INSTANCE.setLongitude(mLongitude);
+    }
+
     @SuppressLint("SetTextI18n")
-    private void setGPSInfo(List<Address> addresses) {
+    private void setAddress(List<Address> addresses) {
         GPSData.INSTANCE.setCountry(addresses.get(0).getCountryName());
         GPSData.INSTANCE.setCountryCode(addresses.get(0).getCountryCode());
         GPSData.INSTANCE.setCity(addresses.get(0).getLocality());
@@ -673,6 +706,27 @@ public class MainActivity extends AppCompatActivity implements
                              addresses.get(0).getThoroughfare() + " " +
                              getResources().getString(R.string.subthoroughfare) +
                              addresses.get(0).getSubThoroughfare());
+    }
+
+
+    @SuppressLint("SetTextI18n")
+    private void getGPSInfo() {
+        mBringAddress.setText(getResources().getString(R.string.country_name) +
+                GPSData.INSTANCE.getContry() + " " +
+                getResources().getString(R.string.country_code) +
+                GPSData.INSTANCE.getCountryCode() + " " +
+                getResources().getString(R.string.local_city) +
+                GPSData.INSTANCE.getCity() + " " +
+                getResources().getString(R.string.admin_area) +
+                GPSData.INSTANCE.getAdminArea() + " " +
+                getResources().getString(R.string.thoroughfare) +
+                GPSData.INSTANCE.getThoroughfare() + " " +
+                getResources().getString(R.string.subthoroughfare) +
+                GPSData.INSTANCE.getSubThoroughfare());
+
+
+        Toast.makeText(this, "Latitude: " + GPSData.INSTANCE.getLatitude() + "  Longitude: " +
+                GPSData.INSTANCE.getLongitude(), Toast.LENGTH_LONG).show();
     }
 
     /**

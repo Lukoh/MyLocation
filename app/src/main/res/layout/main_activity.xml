@@ -88,6 +88,27 @@
             android:layout_marginStart="@dimen/small_margin"
             android:textSize="@dimen/default_text_size" />
 
+        <Button
+            android:id="@+id/bring_address_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="10dp"
+            android:gravity="center"
+            android:text="@string/start_updates" />
+
+        <TextView
+            android:id="@+id/bring_address_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:maxLines="6"
+            android:textColor="@color/colorAccent"
+            android:layout_marginLeft="@dimen/small_margin"
+            android:layout_marginStart="@dimen/small_margin"
+            android:textSize="@dimen/default_text_size" />
+
     </LinearLayout>
 
 
