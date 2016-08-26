@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.goforer.mylocation.model;
+package com.goforer.mylocation.model.data;
 
 public enum GPSData {
     INSTANCE;

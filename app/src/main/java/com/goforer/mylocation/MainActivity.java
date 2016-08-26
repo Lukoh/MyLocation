@@ -54,7 +54,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.goforer.mylocation.model.GPSData;
+import com.goforer.mylocation.model.data.GPSData;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
@@ -68,9 +68,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.maps.model.LatLng;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -451,7 +448,7 @@ public class MainActivity extends AppCompatActivity implements
             new AsyncTask<Void, Void, List<Address>>() {
                 @Override
                 protected List<Address> doInBackground(Void... params) {
-                    Geocoder gcd = new Geocoder(getBaseContext(), Locale.getDefault());
+                    Geocoder gcd = new Geocoder(getApplicationContext(), Locale.getDefault());
                     List<Address> addresses = null;
                     try {
                         addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
