@@ -10,4 +10,7 @@ If you're using the standard API, you need an Android key set up in My Location 
 
 To get a Google API key, you need to refer below link :
 
-[Google Map-Android Key](https://developers.google.com/maps/documentation/android-api/signup)
+[Google Location-Android Key](https://developers.google.com/maps/documentation/android-api/signup)
+
+To get how to get location data such as the latitude and longitude, you have to visit below site:
+[Making Your App Location-Aware](https://developer.android.com/training/location/index.html)
