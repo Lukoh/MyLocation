@@ -551,12 +551,6 @@ public class MainActivity extends AppCompatActivity implements
         // moves to a new location, and then changes the device orientation, the original location
         // is displayed as the activity is re-created.
         if (mCurrentLocation == null) {
-            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-            updateLocationUI();
-        }
-
-        if (mCurrentLocation == null) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     != PackageManager.PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this,
@@ -614,8 +608,7 @@ public class MainActivity extends AppCompatActivity implements
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.length == 1
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // We can now safely use the API we requested access to
                 if (ActivityCompat.checkSelfPermission(this,
                         Manifest.permission.ACCESS_FINE_LOCATION) !=
@@ -637,9 +630,6 @@ public class MainActivity extends AppCompatActivity implements
                         mGoogleApiClient);
                 mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
                 updateUI();
-            } else {
-                // Permission was denied or request was cancelled
-                Toast.makeText(this, R.string.toast_permission_denied, Toast.LENGTH_LONG).show();
             }
         } else if (requestCode == REQUEST_LOCATION_UPDATE_PERMISSION) {
             if(grantResults.length == 1
@@ -655,9 +645,6 @@ public class MainActivity extends AppCompatActivity implements
                         mRequestingLocationUpdates = true;
                     }
                 });
-            } else {
-                // Permission was denied or request was cancelled
-                Toast.makeText(this, R.string.toast_permission_denied, Toast.LENGTH_LONG).show();
             }
         }
     }
