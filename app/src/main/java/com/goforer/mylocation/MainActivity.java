@@ -70,6 +70,7 @@ import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
@@ -114,8 +115,6 @@ public class MainActivity extends AppCompatActivity implements
     TextView mLastUpdateTimeText;
     @BindView(R.id.address_text)
     TextView mAddressText;
-    @BindView(R.id.bring_address_button)
-    Button mBringAddressButton;
     @BindView(R.id.bring_address_text)
     TextView mBringAddress;
 
@@ -432,6 +431,7 @@ public class MainActivity extends AppCompatActivity implements
     /**
      * Sets the value of the UI fields for the location latitude, longitude and last update time.
      */
+    @SuppressLint("DefaultLocale")
     private void updateLocationUI() {
         if (mCurrentLocation != null) {
             mLatitude = mCurrentLocation.getLatitude();
@@ -445,31 +445,7 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         if (isNetworkAvailable(this)) {
-            new AsyncTask<Void, Void, List<Address>>() {
-                @Override
-                protected List<Address> doInBackground(Void... params) {
-                    Geocoder gcd = new Geocoder(getApplicationContext(), Locale.getDefault());
-                    List<Address> addresses = null;
-                    try {
-                        addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
-                        while (addresses.size() == 0) {
-                            addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
-                        }
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    return addresses;
-                }
-
-                @Override
-                protected void onPostExecute(List<Address> addresses) {
-                    if (addresses.size() > 0) {
-                        setAddress(addresses);
-                    }
-                }
-            }.execute();
+            new extractPlaceTask(this).execute();
         }
 
         if (mDialog != null) {
@@ -741,5 +717,40 @@ public class MainActivity extends AppCompatActivity implements
         savedInstanceState.putParcelable(KEY_LOCATION, mCurrentLocation);
         savedInstanceState.putString(KEY_LAST_UPDATED_TIME_STRING, mLastUpdateTime);
         super.onSaveInstanceState(savedInstanceState);
+    }
+
+    private class extractPlaceTask extends AsyncTask<Void, Void, List<Address>> {
+        private WeakReference<MainActivity> activityWeakRef;
+
+        private extractPlaceTask(MainActivity activity) {
+            activityWeakRef = new WeakReference<>(activity);
+        }
+
+        @Override
+        protected List<Address> doInBackground(Void... params) {
+            Geocoder gcd = new Geocoder(getApplicationContext(), Locale.getDefault());
+            List<Address> addresses = null;
+            try {
+                addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
+                while (addresses.size() == 0) {
+                    addresses = gcd.getFromLocation(mLatitude, mLongitude, 1);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return addresses;
+        }
+
+        @Override
+        protected void onPostExecute(List<Address> addresses) {
+            MainActivity activity = activityWeakRef.get();
+            if (activity != null) {
+                if (addresses.size() > 0) {
+                    setAddress(addresses);
+                }
+            }
+        }
     }
 }
